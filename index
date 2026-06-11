@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Manajemen RMU Profesional - RiceMill Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                        },
+                        accent: {
+                            50: '#fffbeb',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        /* Loading Spinner Overlay */
+        #api-loader {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-800 min-h-screen flex flex-col transition-all duration-300">
+
+    <!-- API CONFIGURATION / SETTINGS BAR (Top Screen) -->
+    <div id="api-status-bar" class="bg-slate-900 border-b border-slate-800 text-white text-xs px-6 py-2 flex flex-col sm:flex-row justify-between items-center gap-2 z-40 relative">
+        <div class="flex items-center gap-2">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500" id="api-led-indicator"></span>
+            <span id="api-status-text" class="text-slate-400">Database Belum Terhubung (Lokal Demo)</span>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+            <input type="text" id="api-url-input" placeholder="https://script.google.com/macros/s/AKfycbwO-kzqExlKueLr9Zg8yCMEAf7shMLymacGPdysAaw7T7tMYlTM5ZaS5GVqu7gLdB89TA/exec" class="bg-slate-950 border border-slate-800 px-3 py-1 rounded-lg text-slate-300 text-2xs focus:outline-none focus:ring-1 focus:ring-primary-500 w-full sm:w-80">
+            <button onclick="saveApiUrl()" class="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-3 py-1 rounded-lg text-2xs transition shrink-0">
+                Simpan & Hubungkan
+            </button>
+        </div>
+    </div>
+
+    <!-- LOADER OVERLAY (Global API Loading) -->
+    <div id="api-loader" class="fixed inset-0 bg-slate-950/75 backdrop-blur-xs flex flex-col justify-center items-center z-50">
+        <div class="relative flex items-center justify-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-500"></div>
+            <div class="absolute text-primary-500 font-bold text-xs">RMU</div>
+        </div>
+        <p class="text-white font-medium text-sm mt-4 tracking-wide">Menghubungi Cloud Spreadsheet Database...</p>
+        <p class="text-slate-500 text-xs mt-1">Harap tunggu beberapa detik.</p>
+    </div>
+
+    <!-- SCREEN 1: LOGIN PORTAL -->
+    <div id="login-screen" class="fixed inset-0 top-[38px] bg-slate-950 flex items-center justify-center z-30 p-4 overflow-y-auto">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-emerald-950/40 via-slate-950 to-slate-950"></div>
+        
+        <div class="relative bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md space-y-6">
+            <!-- Brand Header -->
+            <div class="text-center space-y-2">
+                <div class="inline-flex bg-primary-600 p-3.5 rounded-2xl text-white shadow-xl shadow-primary-600/20 mb-2">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z"></path>
+                    </svg>
+                </div>
+                <h1 class="font-extrabold text-2xl tracking-tight text-white">RiceMill Pro</h1>
+                <p class="text-xs text-slate-400">Sistem Manajemen Rice Milling Unit (RMU) Profesional</p>
+            </div>
+
+            <!-- Login Form -->
+            <form onsubmit="handleFormLogin(event)" class="space-y-4 pt-2">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Username</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </span>
+                        <input type="text" id="login-username" required placeholder="Ketik 'admin' atau 'staff'" class="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-950 border border-slate-800 text-white placeholder-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1.5">Password</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        </span>
+                        <input type="password" id="login-password" required placeholder="Sama dengan username" class="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-950 border border-slate-800 text-white placeholder-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 rounded-xl transition text-sm shadow-lg shadow-primary-600/20">
+                    Masuk ke Sistem
+                </button>
+            </form>
+
+            <!-- Quick Demo Profile Selector -->
+            <div class="pt-4 border-t border-slate-800/60 space-y-3">
+                <p class="text-2xs text-slate-500 text-center uppercase tracking-wider font-semibold">Demo Login Cepat</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="quickLogin('admin')" type="button" class="bg-slate-950/60 hover:bg-slate-800/80 text-emerald-400 text-xs py-2.5 px-3 rounded-2xl border border-slate-800/80 hover:border-emerald-500/30 transition flex flex-col items-center gap-1">
+                        <span class="font-bold">Admin/Operator</span>
+                        <span class="text-3xs text-slate-500">Akses Penuh</span>
+                    </button>
+                    <button onclick="quickLogin('staff')" type="button" class="bg-slate-950/60 hover:bg-slate-800/80 text-amber-400 text-xs py-2.5 px-3 rounded-2xl border border-slate-800/80 hover:border-amber-500/30 transition flex flex-col items-center gap-1">
+                        <span class="font-bold">Staff Gudang</span>
+                        <span class="text-3xs text-slate-500">Akses Terbatas</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SCREEN 2: MAIN APP WRAPPER -->
+    <div id="app-wrapper" class="flex h-screen overflow-hidden hidden bg-slate-50 flex-1">
+        
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="bg-slate-900 text-white w-64 flex-shrink-0 flex flex-col justify-between transition-all duration-300 transform -translate-x-full md:translate-x-0 fixed md:relative z-30 h-full">
+            <div>
+                <!-- Brand Logo -->
+                <div class="p-6 flex items-center gap-3 border-b border-slate-800">
+                    <div class="bg-primary-600 p-2 rounded-xl text-white shadow-lg shadow-primary-600/30">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707.707M12 8a4 4 0 110 8 4 4 0 010-8z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-none tracking-wide text-emerald-400">RiceMill Pro</h1>
+                        <span class="text-xs text-slate-400">Sistem RMU Terpadu</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <nav class="p-4 space-y-1">
+                    <button onclick="switchTab('dashboard')" class="nav-btn active w-full flex items-center gap-3 px-4 py-3 rounded-xl transition duration-150 text-left font-medium text-slate-300 hover:bg-slate-800 hover:text-white" data-tab="dashboard">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"></path></svg>
+                        Dashboard
+                    </button>
+                    <!-- Admin Only Menu: Gabah Masuk -->
+                    <button id="nav-gabah-masuk" onclick="switchTab('gabah-masuk')" data-role="admin" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition duration-150 text-left font-medium text-slate-300 hover:bg-slate-800 hover:text-white" data-tab="gabah-masuk">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                        Gabah Masuk (QC)
+                    </button>
+                    <!-- Public/Staff Menu: Proses Giling -->
+                    <button onclick="switchTab('proses-giling')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition duration-150 text-left font-medium text-slate-300 hover:bg-slate-800 hover:text-white" data-tab="proses-giling">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                        Proses Giling (Rendemen)
+                    </button>
+                    <!-- Admin Only Menu: Penjualan -->
+                    <button id="nav-penjualan" onclick="switchTab('penjualan')" data-role="admin" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition duration-150 text-left font-medium text-slate-300 hover:bg-slate-800 hover:text-white" data-tab="penjualan">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Stok & Penjualan
+                    </button>
+                    <!-- Public/Staff Menu: Kontrol Mesin K3 -->
+                    <button onclick="switchTab('maintenance')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition duration-150 text-left font-medium text-slate-300 hover:bg-slate-800 hover:text-white" data-tab="maintenance">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        Kontrol Mesin (K3)
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Sidebar Footer with Operator Status & Logout -->
+            <div class="p-4 border-t border-slate-800 bg-slate-950/50">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="relative">
+                            <div id="user-avatar-initials" class="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center font-bold text-emerald-400">
+                                ADM
+                            </div>
+                            <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-900 rounded-full"></span>
+                        </div>
+                        <div>
+                            <p class="text-3xs text-slate-400 leading-none uppercase tracking-wider font-semibold">User Aktif:</p>
+                            <p id="user-profile-name" class="text-sm font-semibold text-white mt-1">Operator Utama</p>
+                            <span id="user-profile-role-badge" class="inline-block mt-0.5 text-4xs bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Operator</span>
+                        </div>
+                    </div>
+                    <!-- Logout Trigger -->
+                    <button onclick="logout()" class="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-800/80 transition shadow" title="Keluar dari Sistem">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Overlay for mobile sidebar -->
+        <div id="sidebar-overlay" onclick="toggleMobileSidebar()" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-20 md:hidden"></div>
+
+        <!-- MAIN CONTENT CONTAINER -->
+        <div class="flex-1 flex flex-col overflow-y-auto bg-slate-50 text-slate-800">
+            
+            <!-- HEADER -->
+            <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleMobileSidebar()" class="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                    <div>
+                        <h2 id="page-title" class="text-xl font-bold text-slate-800">Dashboard Utama</h2>
+                        <p id="page-subtitle" class="text-xs text-slate-500 mt-0.5 font-medium">Memuat data...</p>
+                    </div>
+                </div>
+                
+                <!-- Date/Time Display -->
+                <div class="flex items-center gap-3 text-sm text-slate-500">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span id="live-time" class="font-semibold">Memuat waktu...</span>
+                </div>
+            </header>
+
+            <!-- MAIN SCREEN PANELS -->
+            <main class="p-6 flex-1 space-y-6">
+
+                <!-- TAB 1: DASHBOARD -->
+                <div id="tab-dashboard" class="tab-panel space-y-6">
+                    <!-- Stat Cards Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Card 1: Stok Gabah GKG -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Stok Gabah (GKG)</p>
+                                <h3 id="stat-stok-gabah" class="text-2xl font-black text-slate-900 mt-1">0 Kg</h3>
+                                <p class="text-xs text-emerald-600 flex items-center mt-1 font-semibold">
+                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                                    Terisi di Silobin
+                                </p>
+                            </div>
+                            <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Stok Beras Siap Jual (Hanya Admin) -->
+                        <div id="card-stok-beras" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Stok Beras Siap Jual</p>
+                                <h3 id="stat-stok-beras" class="text-2xl font-black text-slate-900 mt-1">0 Kg</h3>
+                                <p class="text-xs text-slate-500 flex items-center mt-1 font-semibold">
+                                    Premium & Medium
+                                </p>
+                            </div>
+                            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Rerata Rendemen Riil -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Rerata Rendemen Riil</p>
+                                <h3 id="stat-rendemen" class="text-2xl font-black text-slate-900 mt-1">0%</h3>
+                                <p class="text-xs text-emerald-600 flex items-center mt-1 font-semibold">
+                                    Target Minimum: 62%
+                                </p>
+                            </div>
+                            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            </div>
+                        </div>
+
+                        <!-- Card 4: Kas Penjualan (Hanya Admin) -->
+                        <div id="card-kas-keuangan" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Kas Penjualan</p>
+                                <h3 id="stat-keuangan" class="text-2xl font-black text-slate-900 mt-1">Rp 0</h3>
+                                <p class="text-xs text-slate-500 mt-1 font-semibold">Pendapatan bersih berjalan</p>
+                            </div>
+                            <div class="p-3 bg-purple-50 text-purple-600 rounded-xl">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts & Action Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Chart Area -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="font-bold text-slate-800">Tren Rendemen & Hasil Giling</h4>
+                                <span class="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full font-semibold">Data Cloud Terbaru</span>
+                            </div>
+                            <div class="h-64 relative">
+                                <canvas id="chartProduksi"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Quick Monitoring & Actions -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                            <h4 class="font-bold text-slate-800">Kontrol Mesin Cepat (K3)</h4>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <div>
+                                            <p class="text-sm font-semibold text-slate-700">Mesin 1 - Husker</p>
+                                            <p class="text-xs text-slate-500">Suhu: 42°C | Getaran: Normal</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Berjalan</span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <div>
+                                            <p class="text-sm font-semibold text-slate-700">Mesin 2 - Polisher</p>
+                                            <p class="text-xs text-slate-500">Derajat Sosoh: Maksimal</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Berjalan</span>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4 border-t border-slate-100">
+                                <p class="text-xs text-slate-500 leading-relaxed mb-3">Operator dihimbau selalu melakukan pengecekan kadar air gabah sebelum proses penggilingan di atas silobin.</p>
+                                <button id="btn-quick-gabah" onclick="switchTab('gabah-masuk')" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-4 rounded-xl transition shadow-lg shadow-primary-600/20 text-center text-sm flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                    Input Gabah Masuk Baru
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activities Table -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                            <h4 class="font-bold text-slate-800">Sesi Giling & Hasil Terakhir</h4>
+                            <span class="text-xs text-slate-500">Live Database Update</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 text-slate-600 uppercase text-xs font-semibold">
+                                    <tr>
+                                        <th class="p-4">ID Sesi</th>
+                                        <th class="p-4">Tanggal / Jam</th>
+                                        <th class="p-4">Varietas Gabah</th>
+                                        <th class="p-4">Input (GKG)</th>
+                                        <th class="p-4">Output Beras Kepala</th>
+                                        <th class="p-4">Rendemen Riil</th>
+                                        <th class="p-4">Status Kualitas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-milling-table" class="divide-y divide-slate-100">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 2: GABAH MASUK (QC) - ADMIN ONLY -->
+                <div id="tab-gabah-masuk" class="tab-panel space-y-6 hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- QC & Receipt Form -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-1 space-y-4">
+                            <h4 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z"></path></svg>
+                                Form Penilaian QC & Penerimaan Gabah
+                            </h4>
+                            <p class="text-xs text-slate-500 font-medium">Hitung otomatis estimasi penyusutan Gabah Kering Giling (GKG) sesuai kadar air standar.</p>
+                            
+                            <form id="form-gabah-masuk" onsubmit="addGabahMasuk(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Petani / Supplier</label>
+                                    <input type="text" id="paddy-supplier" required placeholder="Contoh: Pak Slamet" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Varietas Gabah</label>
+                                        <select id="paddy-variety" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                            <option value="IR64">IR64</option>
+                                            <option value="Ciherang">Ciherang</option>
+                                            <option value="Pandan Wangi">Pandan Wangi</option>
+                                            <option value="Inpari 32">Inpari 32</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Berat Basah GKP (Kg)</label>
+                                        <input type="number" id="paddy-weight" required min="1" placeholder="Berat timbangan" oninput="calculateExpectedGKG()" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Kadar Air (%) (KA)</label>
+                                        <input type="number" id="paddy-moisture" step="0.1" required placeholder="Contoh: 14.5" oninput="calculateExpectedGKG()" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Kotoran/Hampa (%)</label>
+                                        <input type="number" id="paddy-impurities" step="0.1" required placeholder="Contoh: 2" oninput="calculateExpectedGKG()" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Harga Pembelian per Kg (Rp)</label>
+                                    <input type="number" id="paddy-price" required placeholder="Contoh: 6800" oninput="calculateExpectedGKG()" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                </div>
+
+                                <!-- Live Estimation Box -->
+                                <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 text-xs space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500">Estimasi Kering (GKG):</span>
+                                        <span id="est-gkg" class="font-bold text-slate-700">0 Kg</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500">Total Pembayaran:</span>
+                                        <span id="est-total-payment" class="font-bold text-primary-700">Rp 0</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500">Status Kualitas:</span>
+                                        <span id="est-quality" class="font-bold text-slate-500">Belum Ada Input</span>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 rounded-xl transition text-sm">
+                                    Simpan Gabah ke Cloud Database
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Warehouse Stocks List -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="font-bold text-slate-800">Daftar Antrean Gabah Kering Giling (GKG)</h4>
+                                <span class="text-xs text-slate-500">Tersedia untuk Sesi Giling</span>
+                            </div>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-slate-50 text-slate-600 uppercase text-xs font-semibold">
+                                        <tr>
+                                            <th class="p-3">ID Gabah</th>
+                                            <th class="p-3">Pemasok</th>
+                                            <th class="p-3">Varietas</th>
+                                            <th class="p-3">KA (%)</th>
+                                            <th class="p-3">Berat Bersih (GKG)</th>
+                                            <th class="p-3">Harga Beli</th>
+                                            <th class="p-3">Opsi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="paddy-stock-table" class="divide-y divide-slate-100">
+                                        <!-- Dynamic Rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 3: PROSES GILING (RENDEMEN) -->
+                <div id="tab-proses-giling" class="tab-panel space-y-6 hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Initiate Milling Form -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-1 space-y-4">
+                            <h4 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a2 2 0 002 2h3a1 1 0 011 1v13a1 1 0 01-1 1H3a1 1 0 01-1-1V8a1 1 0 011-1h3a2 2 0 002-2V4a2 2 0 114 0v1a2 2 0 002-2V4z"></path></svg>
+                                Rekam Sesi Giling Baru
+                            </h4>
+                            <p class="text-xs text-slate-500">Kurangi batch GKG di gudang untuk ditransformasi menjadi stok beras siap jual.</p>
+
+                            <form id="form-milling" onsubmit="executeMilling(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Batch Gabah Ready</label>
+                                    <select id="milling-paddy-source" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500" onchange="updateMillingSourceWeight()">
+                                        <!-- Dynamic options -->
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Input Giling GKG (Kg)</label>
+                                        <input type="number" id="milling-weight-input" required min="1" oninput="calculateRealtimeMillingYield()" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Beras Kepala (Kg)</label>
+                                        <input type="number" id="milling-rice-head" required min="0" oninput="calculateRealtimeMillingYield()" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="block text-2xs font-semibold text-slate-600 mb-1">Beras Patah/Menir (Kg)</label>
+                                        <input type="number" id="milling-rice-broken" required min="0" oninput="calculateRealtimeMillingYield()" class="w-full px-2 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-2xs font-semibold text-slate-600 mb-1">Dedak Pakan (Kg)</label>
+                                        <input type="number" id="milling-dedak" required min="0" oninput="calculateRealtimeMillingYield()" class="w-full px-2 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-2xs font-semibold text-slate-600 mb-1">Sekam Kasar (Kg)</label>
+                                        <input type="number" id="milling-sekam" required min="0" oninput="calculateRealtimeMillingYield()" class="w-full px-2 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    </div>
+                                </div>
+
+                                <!-- Rendemen Real-time feedback -->
+                                <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 text-xs space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500">Total Hasil Output:</span>
+                                        <span id="milling-total-output" class="font-bold text-slate-700">0 Kg</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500">Losses Produksi:</span>
+                                        <span id="milling-loss" class="font-bold text-rose-600">0 Kg (0%)</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500">Rendemen Riil Beras:</span>
+                                        <span id="milling-rendemen-percent" class="font-bold text-primary-700">0%</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-slate-500">Kondisi Efisiensi Mesin:</span>
+                                        <span id="milling-efficiency-label" class="font-bold text-slate-500">Belum Berjalan</span>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-xl transition text-sm">
+                                    Kirim & Selesaikan Giling (Cloud)
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Historical Yield Table -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="font-bold text-slate-800">Laporan Hasil Rendemen Mesin Giling</h4>
+                                <span class="text-xs text-slate-500">Mutu Dan Kelayakan</span>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-slate-50 text-slate-600 uppercase text-xs font-semibold">
+                                        <tr>
+                                            <th class="p-3">ID Sesi</th>
+                                            <th class="p-3">Varietas</th>
+                                            <th class="p-3">Input (GKG)</th>
+                                            <th class="p-3">Hasil Beras (Kepala/Patah)</th>
+                                            <th class="p-3">Sampingan (Dedak/Sekam)</th>
+                                            <th class="p-3">Rendemen Riil</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="milling-history-table" class="divide-y divide-slate-100">
+                                        <!-- Dynamic rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 4: PENJUALAN & STOK - ADMIN ONLY -->
+                <div id="tab-penjualan" class="tab-panel space-y-6 hidden">
+                    <!-- Stock Cards Overview -->
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                            <p class="text-xs text-slate-500 font-bold">Beras Premium</p>
+                            <h5 id="stock-premium-qty" class="text-xl font-black text-slate-900 mt-1">0 Kg</h5>
+                            <span class="text-3xs bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-full font-bold">Siap Jual</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                            <p class="text-xs text-slate-500 font-bold">Beras Medium</p>
+                            <h5 id="stock-medium-qty" class="text-xl font-black text-slate-900 mt-1">0 Kg</h5>
+                            <span class="text-3xs bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-full font-bold">Siap Jual</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                            <p class="text-xs text-slate-500 font-bold">Menir (Beras Patah)</p>
+                            <h5 id="stock-menir-qty" class="text-xl font-black text-slate-900 mt-1">0 Kg</h5>
+                            <span class="text-3xs bg-slate-100 text-slate-800 px-2 py-0.5 rounded-full font-bold">Tersedia</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                            <p class="text-xs text-slate-500 font-bold">Dedak Pakan</p>
+                            <h5 id="stock-dedak-qty" class="text-xl font-black text-slate-900 mt-1">0 Kg</h5>
+                            <span class="text-3xs bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full font-bold">Premium</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                            <p class="text-xs text-slate-500 font-bold">Sekam Padi</p>
+                            <h5 id="stock-sekam-qty" class="text-xl font-black text-slate-900 mt-1">0 Kg</h5>
+                            <span class="text-3xs bg-purple-50 text-purple-800 px-2 py-0.5 rounded-full font-bold">Limbah/Bahan Bakar</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Sales Transaction Form -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-1 space-y-4">
+                            <h4 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                Kasir Penjualan Beras & Dedak
+                            </h4>
+                            <p class="text-xs text-slate-500">Potong otomatis stok gudang di cloud dan tambahkan saldo keuangan.</p>
+
+                            <form id="form-sales" onsubmit="processSale(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Pembeli (Distributor/Toko)</label>
+                                    <input type="text" id="sales-customer" required placeholder="Contoh: Toko Beras Barokah" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Produk</label>
+                                        <select id="sales-product" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500" onchange="updateSalesProductPrice()">
+                                            <option value="Premium">Beras Premium</option>
+                                            <option value="Medium">Beras Medium</option>
+                                            <option value="Menir">Beras Patah (Menir)</option>
+                                            <option value="Dedak">Dedak Pakan</option>
+                                            <option value="Sekam">Sekam Padi</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Jumlah Jual (Kg)</label>
+                                        <input type="number" id="sales-quantity" required min="1" oninput="calculateSalesTotal()" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Harga Satuan (Rp/Kg)</label>
+                                        <input type="number" id="sales-price-unit" required oninput="calculateSalesTotal()" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Total Penerimaan</label>
+                                        <input type="text" id="sales-total-display" disabled class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 font-bold text-primary-700" value="Rp 0">
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-xl transition text-sm">
+                                    Proses Penjualan (Update Cloud)
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Historical Sales Ledger -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h4 class="font-bold text-slate-800">Catatan Kas Masuk Penjualan (Ledger)</h4>
+                                <span class="text-xs text-slate-500">Arus Kas Keuangan</span>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-slate-50 text-slate-600 uppercase text-xs font-semibold">
+                                        <tr>
+                                            <th class="p-3">ID Nota</th>
+                                            <th class="p-3">Pembeli</th>
+                                            <th class="p-3">Produk</th>
+                                            <th class="p-3">Kuantitas</th>
+                                            <th class="p-3">Total Tagihan</th>
+                                            <th class="p-3">Tanggal / Waktu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sales-history-table" class="divide-y divide-slate-100">
+                                        <!-- Dynamic Sales Entries -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- TAB 5: MAINTENANCE & K3 CONTROL -->
+                <div id="tab-maintenance" class="tab-panel space-y-6 hidden">
+                    <!-- Critical Alarm Status -->
+                    <div class="p-5 bg-amber-50 rounded-2xl border border-amber-200 flex items-start gap-4">
+                        <div class="p-3 bg-amber-100 text-amber-700 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-amber-900 text-sm">Peringatan K3 & Perawatan Berkala (Jadwal Terdekat)</h5>
+                            <p class="text-xs text-amber-800 mt-1 leading-relaxed">
+                                Saringan pada mesin <strong>Soh (Polisher)</strong> membutuhkan inspeksi manual setiap 50 jam operasional untuk menjaga kebersihan permukaan beras dan mencegah penumpukan bekatul yang bisa menyebabkan gesekan berlebih/beras patah.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Grid Controls -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Machine Card 1: Husker -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-bold text-slate-800">Husker (Mesin Pecah Kulit)</h4>
+                                <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-bold">Running OK</span>
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between"><span class="text-slate-500">Merek/Tipe:</span> <span class="font-semibold text-slate-700">Yanmar HW60</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">Kapasitas Maks:</span> <span class="font-semibold text-slate-700">2.5 Ton / Jam</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">Rubber Roll Wear:</span> <span class="font-semibold text-emerald-600">35% (Kondisi Bagus)</span></div>
+                            </div>
+                            <!-- Maintenance progress bar -->
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-2xs font-semibold text-slate-500">
+                                    <span>Menuju Servis Berikutnya</span>
+                                    <span>120 / 200 Jam</span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-2">
+                                    <div class="bg-primary-500 h-2 rounded-full" style="width: 60%"></div>
+                                </div>
+                            </div>
+                            <button onclick="logMaintenance('Husker')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs py-2 rounded-xl transition">
+                                Laporkan Pemeliharaan / Ganti Rubber Roll
+                            </button>
+                        </div>
+
+                        <!-- Machine Card 2: Polisher -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-bold text-slate-800">Polisher (Mesin Sosoh/Pemutih)</h4>
+                                <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-bold">Running OK</span>
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between"><span class="text-slate-500">Merek/Tipe:</span> <span class="font-semibold text-slate-700">Satake KB40G</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">Kapasitas Maks:</span> <span class="font-semibold text-slate-700">2.0 Ton / Jam</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">Tekanan Pompa Air:</span> <span class="font-semibold text-slate-700">2.4 Bar (Normal)</span></div>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-2xs font-semibold text-slate-500">
+                                    <span>Menuju Servis Berikutnya</span>
+                                    <span>95 / 100 Jam (Saran)</span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-2">
+                                    <div class="bg-amber-500 h-2 rounded-full" style="width: 95%"></div>
+                                </div>
+                            </div>
+                            <button onclick="logMaintenance('Polisher')" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs py-2 rounded-xl transition">
+                                Ganti Saringan / Bersihkan Sekarang
+                            </button>
+                        </div>
+
+                        <!-- Machine Card 3: Color Sorter -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-bold text-slate-800">Color Sorter (Penyaring Warna)</h4>
+                                <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold">Butuh Atensi</span>
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between"><span class="text-slate-500">Merek/Tipe:</span> <span class="font-semibold text-slate-700">Anzai Smart 4</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">Saluran Kamera:</span> <span class="font-semibold text-rose-500">Chute 3 Terdeteksi Debu</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500">Ejector Status:</span> <span class="font-semibold text-slate-700">Kalibrasi Sesuai</span></div>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-2xs font-semibold text-slate-500">
+                                    <span>Menuju Servis Berikutnya</span>
+                                    <span>10 / 150 Jam</span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-2">
+                                    <div class="bg-primary-500 h-2 rounded-full" style="width: 7%"></div>
+                                </div>
+                            </div>
+                            <button onclick="logMaintenance('Color Sorter')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs py-2 rounded-xl transition">
+                                Jalankan Siklus Air-Purging / Lap Lensa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- FOOTER -->
+            <footer class="bg-white border-t border-slate-200 px-6 py-4 text-center text-xs text-slate-500 font-medium">
+                <p>&copy; 2026 PT. Global Solusi RiceMill (RiceMill Pro). Terhubung ke Cloud Database.</p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed bottom-5 right-5 space-y-3 z-50"></div>
+
+
+    <!-- JAVASCRIPT LOGICAL CONTROLLERS -->
+    <script>
+        // GLOBAL APP STATE (Will be populated from GAS Spreadsheet Database)
+        let state = {
+            currentUser: { username: '', role: '' },
+            isLoggedIn: false,
+            paddyStock: [],
+            riceStock: { Premium: 0, Medium: 0, Menir: 0, Dedak: 0, Sekam: 0 },
+            productPrices: { Premium: 14500, Medium: 12800, Menir: 8500, Dedak: 3500, Sekam: 800 },
+            millingSessions: [],
+            salesTransactions: [],
+            financeBalance: 0
+        };
+
+        // URL backend API GAS
+        let GAS_API_URL = '';
+
+        // Loader helper
+        function showLoader(show) {
+            document.getElementById('api-loader').style.display = show ? 'flex' : 'none';
+        }
+
+        // ================= KONEKSI API BACKEND =================
+        function initApiConnection() {
+            const savedUrl = localStorage.getItem('RMU_GAS_API_URL');
+            const indicator = document.getElementById('api-led-indicator');
+            const statusText = document.getElementById('api-status-text');
+
+            if (savedUrl) {
+                GAS_API_URL = savedUrl;
+                document.getElementById('api-url-input').value = savedUrl;
+                indicator.className = 'inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
+                statusText.innerText = 'Tersambung ke Cloud Spreadsheet';
+                statusText.className = 'text-emerald-400 font-semibold';
+                return true;
+            } else {
+                GAS_API_URL = '';
+                indicator.className = 'inline-block w-2.5 h-2.5 rounded-full bg-amber-500';
+                statusText.innerText = 'Database Offline (Mode Demo)';
+                statusText.className = 'text-amber-500 font-semibold';
+                return false;
+            }
+        }
+
+        function saveApiUrl() {
+            const url = document.getElementById('api-url-input').value.trim();
+            if (url) {
+                localStorage.setItem('RMU_GAS_API_URL', url);
+                showNotification('success', 'Koneksi Disimpan', 'Frontend akan mencoba memuat data dari Spreadsheet Anda.');
+                initApiConnection();
+                // Jika sudah log in, muat ulang datanya
+                if (state.isLoggedIn) {
+                    fetchDatabaseData();
+                }
+            } else {
+                localStorage.removeItem('RMU_GAS_API_URL');
+                showNotification('warning', 'Koneksi Dihapus', 'Sistem kembali ke mode offline.');
+                initApiConnection();
+            }
+        }
+
+        /**
+         * PENGIRIM INTEGRAL KE GAS API
+         */
+        async function callApi(payload) {
+            if (!GAS_API_URL) {
+                // FALLBACK TO LOCAL DEMO jika URL belum diset
+                return runLocalFallback(payload);
+            }
+
+            showLoader(true);
+            try {
+                const response = await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: {
+                        'Content-Type': 'text/plain' // Menghindari CORS pre-flight OPTIONS request di GAS
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Respons jaringan gagal');
+                }
+
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                showNotification('error', 'Koneksi Cloud Gagal', 'Gagal memproses ke GAS: ' + error.message);
+                return { status: 'error', message: error.message };
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        // Run local simulated state if spreadsheet API is not provided yet
+        function runLocalFallback(payload) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    if (payload.action === 'login') {
+                        if (payload.username === 'admin' && payload.password === 'admin') {
+                            resolve({ status: 'success', user: { name: 'Operator Utama', role: 'admin' } });
+                        } else if (payload.username === 'staff' && payload.password === 'staff') {
+                            resolve({ status: 'success', user: { name: 'Staff Gudang', role: 'staff' } });
+                        } else {
+                            resolve({ status: 'error', message: 'User tidak terdaftar' });
+                        }
+                    } else if (payload.action === 'getData') {
+                        // Return mock data local
+                        resolve({
+                            status: 'success',
+                            data: {
+                                paddyStock: [
+                                    { id: 'GBH-101', supplier: 'Koptan Subur', variety: 'IR64', moisture: 13.8, GKG: 12500, price: 6800, date: '2026-06-10 08:30' }
+                                ],
+                                riceStock: { Premium: 4500, Medium: 3100, Menir: 650, Dedak: 1200, Sekam: 3000 },
+                                millingSessions: [
+                                    { id: 'MIL-401', date: '2026-06-08 14:00', variety: 'IR64', inputGKG: 5000, outputRice: 3200, outputBroken: 350, outputDedak: 600, outputSekam: 750, rendemen: 64.0 }
+                                ],
+                                salesTransactions: [
+                                    { id: 'INV-1001', customer: 'Bulog Divre Jabar', product: 'Medium', quantity: 2000, totalPrice: 25600000, date: '2026-06-09 16:30' }
+                                ],
+                                financeBalance: 128400000
+                            }
+                        });
+                    } else {
+                        resolve({ status: 'success', message: 'Aksi disimulasikan secara lokal!' });
+                    }
+                }, 500);
+            });
+        }
+
+
+        // ================= MULTI-LOGIN LOGIC =================
+        async function handleFormLogin(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('login-username').value;
+            const passwordInput = document.getElementById('login-password').value;
+
+            const res = await callApi({
+                action: 'login',
+                username: usernameInput,
+                password: passwordInput
+            });
+
+            if (res.status === 'success') {
+                login(res.user);
+            } else {
+                showNotification('error', 'Akses Gagal', res.message || 'Username/password tidak cocok.');
+            }
+        }
+
+        async function quickLogin(role) {
+            let userObj = { name: 'Operator Utama', role: 'admin' };
+            if (role === 'staff') {
+                userObj = { name: 'Staff Gudang', role: 'staff' };
+            }
+
+            // Jika URL API terpasang, coba verifikasi dengan credentials demo
+            if (GAS_API_URL) {
+                const res = await callApi({
+                    action: 'login',
+                    username: role,
+                    password: role
+                });
+                if (res.status === 'success') {
+                    login(res.user);
+                } else {
+                    showNotification('error', 'Verifikasi Akun Gagal', 'Password demo default di Google Sheet Anda mungkin telah berubah.');
+                }
+            } else {
+                // bypass local demo
+                login(userObj);
+            }
+        }
+
+        function login(user) {
+            state.currentUser = user;
+            state.isLoggedIn = true;
+
+            // Clear login inputs
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-wrapper').classList.remove('hidden');
+
+            applyRBAC();
+            fetchDatabaseData();
+
+            showNotification('success', 'Login Berhasil', `Selamat datang kembali, ${state.currentUser.name}!`);
+        }
+
+        function logout() {
+            state.currentUser = { username: '', role: '' };
+            state.isLoggedIn = false;
+
+            document.getElementById('app-wrapper').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+
+            showNotification('warning', 'Logged Out', 'Anda telah keluar dari sesi RMU.');
+        }
+
+        function applyRBAC() {
+            const role = state.currentUser.role;
+
+            document.getElementById('user-profile-name').innerText = state.currentUser.name;
+            const roleBadge = document.getElementById('user-profile-role-badge');
+            const avatarBox = document.getElementById('user-avatar-initials');
+
+            if (role === 'admin') {
+                roleBadge.innerText = 'Admin';
+                roleBadge.className = 'inline-block mt-0.5 text-4xs bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide';
+                avatarBox.innerText = 'ADM';
+                avatarBox.className = 'w-10 h-10 rounded-xl bg-emerald-900/50 flex items-center justify-center font-bold text-emerald-400';
+                
+                // Show Admin Menu
+                document.getElementById('nav-gabah-masuk').classList.remove('hidden');
+                document.getElementById('nav-penjualan').classList.remove('hidden');
+                document.getElementById('card-stok-beras').classList.remove('hidden');
+                document.getElementById('card-kas-keuangan').classList.remove('hidden');
+                document.getElementById('btn-quick-gabah').classList.remove('hidden');
+            } else {
+                roleBadge.innerText = 'Staff Operasional';
+                roleBadge.className = 'inline-block mt-0.5 text-4xs bg-amber-950 text-amber-300 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide';
+                avatarBox.innerText = 'STF';
+                avatarBox.className = 'w-10 h-10 rounded-xl bg-amber-900/50 flex items-center justify-center font-bold text-amber-400';
+                
+                // Hide Admin Menu
+                document.getElementById('nav-gabah-masuk').classList.add('hidden');
+                document.getElementById('nav-penjualan').classList.add('hidden');
+                document.getElementById('card-stok-beras').classList.add('hidden');
+                document.getElementById('card-kas-keuangan').classList.add('hidden');
+                document.getElementById('btn-quick-gabah').classList.add('hidden');
+            }
+
+            // Adjust grid dashboard
+            const cardsGrid = document.querySelector('#tab-dashboard .grid-cols-1');
+            if (role === 'staff') {
+                cardsGrid.classList.remove('lg:grid-cols-4');
+                cardsGrid.classList.add('lg:grid-cols-2');
+            } else {
+                cardsGrid.classList.remove('lg:grid-cols-2');
+                cardsGrid.classList.add('lg:grid-cols-4');
+            }
+        }
+
+        // Ambil Data Terkini dari GAS Spreadsheet
+        async function fetchDatabaseData() {
+            const res = await callApi({ action: 'getData' });
+            if (res.status === 'success') {
+                state.paddyStock = res.data.paddyStock;
+                state.riceStock = res.data.riceStock;
+                state.millingSessions = res.data.millingSessions;
+                state.salesTransactions = res.data.salesTransactions;
+                state.financeBalance = res.data.financeBalance;
+
+                // Render views
+                renderDashboardStats();
+                renderRecentMillingDashboard();
+                updateDashboardCharts();
+                renderPaddyStockTable();
+                renderMillingHistoryTable();
+                renderProductStockStats();
+                renderSalesLedgerTable();
+                populateMillingSourceSelector();
+            }
+        }
+
+
+        // ================= TAB NAVIGATION =================
+        function switchTab(tabId) {
+            if (state.currentUser.role === 'staff' && (tabId === 'gabah-masuk' || tabId === 'penjualan')) {
+                showNotification('error', 'Akses Ditolak', 'Staff operasional tidak diizinkan masuk ke modul ini.');
+                return;
+            }
+
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.getAttribute('data-tab') === tabId) {
+                    btn.classList.add('bg-primary-600', 'text-white');
+                    btn.classList.remove('text-slate-300', 'hover:bg-slate-800');
+                } else {
+                    btn.classList.remove('bg-primary-600', 'text-white');
+                    btn.classList.add('text-slate-300', 'hover:bg-slate-800');
+                }
+            });
+
+            const titles = {
+                dashboard: 'Dashboard Utama',
+                'gabah-masuk': 'Penerimaan Gabah Masuk & Penilaian QC',
+                'proses-giling': 'Proses Penggilingan & Kalkulasi Rendemen',
+                penjualan: 'Stok Beras & Modul Kasir Penjualan',
+                maintenance: 'Status Kelayakan Mesin & K3 RMU'
+            };
+            
+            const subtitles = {
+                dashboard: state.currentUser.role === 'admin' 
+                    ? 'Pantauan data operasional giling, keuangan, dan kualitas gabah RMU hari ini.'
+                    : 'Pantauan data giling, stok gabah kering giling, dan mesin produksi (Akses Staff).',
+                'gabah-masuk': 'Analisis kadar air dan hampa gabah petani untuk standarisasi harga beli.',
+                'proses-giling': 'Hitung performa mesin giling beras (Yield) secara real-time dari input GKG.',
+                penjualan: 'Inventaris beras premium, medium, menir, serta log keuangan transaksi.',
+                maintenance: 'Pemeliharaan sensor, kelayakan motor dinamo, dan keselamatan area produksi.'
+            };
+            
+            document.getElementById('page-title').innerText = titles[tabId];
+            document.getElementById('page-subtitle').innerText = subtitles[tabId];
+
+            if (tabId === 'dashboard') {
+                updateDashboardCharts();
+            } else if (tabId === 'proses-giling') {
+                populateMillingSourceSelector();
+            }
+
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (!sidebar.classList.contains('-translate-x-full')) {
+                toggleMobileSidebar();
+            }
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+
+        // ================= GABAH MASUK (QC) CONTROLLER =================
+        function calculateExpectedGKG() {
+            const weightBasah = parseFloat(document.getElementById('paddy-weight').value) || 0;
+            const KA = parseFloat(document.getElementById('paddy-moisture').value) || 0;
+            const impurities = parseFloat(document.getElementById('paddy-impurities').value) || 0;
+            const priceUnit = parseFloat(document.getElementById('paddy-price').value) || 0;
+
+            if (weightBasah === 0) {
+                document.getElementById('est-gkg').innerText = '0 Kg';
+                document.getElementById('est-total-payment').innerText = 'Rp 0';
+                document.getElementById('est-quality').innerText = 'Menunggu Input';
+                return;
+            }
+
+            const targetMoisture = 14.0;
+            const moistureAdjustment = (100 - KA - impurities) / (100 - targetMoisture);
+            const estGKG = Math.round(weightBasah * moistureAdjustment);
+            const totalPayment = Math.round(weightBasah * priceUnit);
+
+            document.getElementById('est-gkg').innerText = `${estGKG.toLocaleString('id-ID')} Kg`;
+            document.getElementById('est-total-payment').innerText = formatRupiah(totalPayment);
+
+            let quality = 'Normal';
+            let color = 'text-slate-600';
+            if (KA < 14) {
+                quality = 'Super (Kering Optimal)';
+                color = 'text-emerald-600';
+            } else if (KA > 17) {
+                quality = 'Rendah (Butuh Pengeringan Dryer)';
+                color = 'text-rose-500';
+            } else {
+                quality = 'Sedang (Normal)';
+                color = 'text-amber-500';
+            }
+
+            const qualityEl = document.getElementById('est-quality');
+            qualityEl.innerText = quality;
+            qualityEl.className = `font-bold ${color}`;
+        }
+
+        async function addGabahMasuk(e) {
+            e.preventDefault();
+            const supplier = document.getElementById('paddy-supplier').value;
+            const variety = document.getElementById('paddy-variety').value;
+            const weightBasah = parseFloat(document.getElementById('paddy-weight').value);
+            const KA = parseFloat(document.getElementById('paddy-moisture').value);
+            const impurities = parseFloat(document.getElementById('paddy-impurities').value);
+            const priceUnit = parseFloat(document.getElementById('paddy-price').value);
+
+            const targetMoisture = 14.0;
+            const moistureAdjustment = (100 - KA - impurities) / (100 - targetMoisture);
+            const GKG = Math.round(weightBasah * moistureAdjustment);
+
+            const res = await callApi({
+                action: 'addGabah',
+                supplier,
+                variety,
+                moisture: KA,
+                GKG,
+                price: priceUnit,
+                weightBasah
+            });
+
+            if (res.status === 'success') {
+                showNotification('success', 'Gabah Disimpan', 'Data gabah masuk berhasil disinkronisasikan ke Google Spreadsheet.');
+                document.getElementById('form-gabah-masuk').reset();
+                calculateExpectedGKG();
+                fetchDatabaseData();
+            } else {
+                showNotification('error', 'Gagal', 'Gagal menyimpan data ke cloud.');
+            }
+        }
+
+        async function deletePaddy(id) {
+            const res = await callApi({ action: 'deleteGabah', id });
+            if (res.status === 'success') {
+                showNotification('warning', 'Batch Dihapus', `Batch gabah ${id} berhasil dikeluarkan dari database.`);
+                fetchDatabaseData();
+            }
+        }
+
+        function renderPaddyStockTable() {
+            const tableBody = document.getElementById('paddy-stock-table');
+            if(!tableBody) return;
+            tableBody.innerHTML = '';
+
+            if (state.paddyStock.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-medium">Tidak ada persediaan gabah di gudang. Silakan lakukan input baru.</td></tr>`;
+                return;
+            }
+
+            state.paddyStock.forEach(p => {
+                tableBody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-bold text-slate-700">${p.id}</td>
+                        <td class="p-3">
+                            <p class="font-bold text-slate-800">${p.supplier}</p>
+                            <span class="text-3xs text-slate-400 font-semibold">${p.date}</span>
+                        </td>
+                        <td class="p-3"><span class="bg-amber-100 text-amber-800 text-2xs font-extrabold px-2 py-0.5 rounded">${p.variety}</span></td>
+                        <td class="p-3 font-semibold text-slate-700">${p.moisture}%</td>
+                        <td class="p-3 font-black text-slate-900">${p.GKG.toLocaleString('id-ID')} Kg</td>
+                        <td class="p-3 font-semibold text-slate-500">${formatRupiah(p.price)}/Kg</td>
+                        <td class="p-3">
+                            <button onclick="deletePaddy('${p.id}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded hover:bg-rose-50 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+
+        // ================= PROCESS MILLING (RENDEMEN) CONTROLLER =================
+        function populateMillingSourceSelector() {
+            const selector = document.getElementById('milling-paddy-source');
+            if(!selector) return;
+            selector.innerHTML = '<option value="">-- Pilih Batch Gabah --</option>';
+            
+            state.paddyStock.forEach(p => {
+                selector.innerHTML += `<option value="${p.id}">${p.id} - ${p.variety} (Stok: ${p.GKG.toLocaleString('id-ID')} Kg)</option>`;
+            });
+        }
+
+        function updateMillingSourceWeight() {
+            const selectedId = document.getElementById('milling-paddy-source').value;
+            const batch = state.paddyStock.find(p => p.id === selectedId);
+            if (batch) {
+                document.getElementById('milling-weight-input').value = batch.GKG;
+                document.getElementById('milling-weight-input').max = batch.GKG;
+                calculateRealtimeMillingYield();
+            } else {
+                document.getElementById('milling-weight-input').value = '';
+                calculateRealtimeMillingYield();
+            }
+        }
+
+        function calculateRealtimeMillingYield() {
+            const inputWeight = parseFloat(document.getElementById('milling-weight-input').value) || 0;
+            const headRice = parseFloat(document.getElementById('milling-rice-head').value) || 0;
+            const brokenRice = parseFloat(document.getElementById('milling-rice-broken').value) || 0;
+            const dedak = parseFloat(document.getElementById('milling-dedak').value) || 0;
+            const sekam = parseFloat(document.getElementById('milling-sekam').value) || 0;
+
+            if (inputWeight === 0) {
+                document.getElementById('milling-total-output').innerText = '0 Kg';
+                document.getElementById('milling-loss').innerText = '0 Kg (0%)';
+                document.getElementById('milling-rendemen-percent').innerText = '0%';
+                document.getElementById('milling-efficiency-label').innerText = 'Belum Berjalan';
+                return;
+            }
+
+            const totalOutput = headRice + brokenRice + dedak + sekam;
+            const loss = inputWeight - totalOutput;
+            const lossPercent = ((loss / inputWeight) * 100).toFixed(1);
+
+            const rendemenRice = headRice + brokenRice;
+            const rendemenPercent = ((rendemenRice / inputWeight) * 100).toFixed(1);
+
+            document.getElementById('milling-total-output').innerText = `${totalOutput.toLocaleString('id-ID')} Kg`;
+            
+            if (loss >= 0) {
+                document.getElementById('milling-loss').innerText = `${loss.toLocaleString('id-ID')} Kg (${lossPercent}%)`;
+                document.getElementById('milling-loss').className = "font-bold text-slate-700";
+            } else {
+                document.getElementById('milling-loss').innerText = `Surplus ${Math.abs(loss).toLocaleString('id-ID')} Kg`;
+                document.getElementById('milling-loss').className = "font-bold text-rose-500";
+            }
+
+            document.getElementById('milling-rendemen-percent').innerText = `${rendemenPercent}%`;
+
+            let evalLabel = 'Biasa (Rendemen Standar)';
+            let color = 'text-amber-500';
+            if (rendemenPercent >= 64.0) {
+                evalLabel = 'Sangat Efisien (Mesin Presisi)';
+                color = 'text-emerald-600';
+            } else if (rendemenPercent < 61.0) {
+                evalLabel = 'Kurang Efisien (Penyosohan Keras/Beras Patah Tinggi)';
+                color = 'text-rose-500';
+            }
+
+            const evalEl = document.getElementById('milling-efficiency-label');
+            evalEl.innerText = evalLabel;
+            evalEl.className = `font-bold ${color}`;
+        }
+
+        async function executeMilling(e) {
+            e.preventDefault();
+            const selectedBatchId = document.getElementById('milling-paddy-source').value;
+            const inputWeight = parseFloat(document.getElementById('milling-weight-input').value);
+            const headRice = parseFloat(document.getElementById('milling-rice-head').value);
+            const brokenRice = parseFloat(document.getElementById('milling-rice-broken').value);
+            const dedak = parseFloat(document.getElementById('milling-dedak').value);
+            const sekam = parseFloat(document.getElementById('milling-sekam').value);
+
+            if (!selectedBatchId) {
+                showNotification('error', 'Gagal', 'Pilih batch gabah yang valid untuk digiling.');
+                return;
+            }
+
+            const totalRice = headRice + brokenRice;
+            const rendemenPercent = parseFloat(((totalRice / inputWeight) * 100).toFixed(1));
+
+            const res = await callApi({
+                action: 'executeMilling',
+                paddyId: selectedBatchId,
+                inputGKG: inputWeight,
+                outputRiceHead: headRice,
+                outputRiceBroken: brokenRice,
+                outputDedak: dedak,
+                outputSekam: sekam,
+                rendemen: rendemenPercent
+            });
+
+            if (res.status === 'success') {
+                showNotification('success', 'Sesi Giling Selesai', `Proses giling berhasil disinkronkan ke database cloud!`);
+                document.getElementById('form-milling').reset();
+                document.getElementById('milling-paddy-source').value = "";
+                calculateRealtimeMillingYield();
+                fetchDatabaseData();
+            } else {
+                showNotification('error', 'Gagal', res.message || 'Gagal mengirim data sesi giling.');
+            }
+        }
+
+        function renderMillingHistoryTable() {
+            const tableBody = document.getElementById('milling-history-table');
+            if(!tableBody) return;
+            tableBody.innerHTML = '';
+
+            state.millingSessions.forEach(s => {
+                let statusColor = 'bg-amber-100 text-amber-800';
+                let statusLabel = 'Standard';
+                if (s.rendemen >= 64.0) {
+                    statusColor = 'bg-emerald-100 text-emerald-800';
+                    statusLabel = 'Optimal';
+                } else if (s.rendemen < 61.0) {
+                    statusColor = 'bg-rose-100 text-rose-800';
+                    statusLabel = 'Loss Tinggi';
+                }
+
+                tableBody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-bold text-slate-700">${s.id}</td>
+                        <td class="p-3">
+                            <p class="font-bold text-slate-800">${s.variety}</p>
+                            <span class="text-3xs text-slate-400 font-semibold">${s.date}</span>
+                        </td>
+                        <td class="p-3 font-bold text-slate-800">${s.inputGKG.toLocaleString('id-ID')} Kg GKG</td>
+                        <td class="p-3">
+                            <p class="text-xs text-slate-700">Kepala: <strong>${s.outputRice.toLocaleString('id-ID')} Kg</strong></p>
+                            <p class="text-xs text-slate-500 font-medium">Patah/Menir: ${s.outputBroken.toLocaleString('id-ID')} Kg</p>
+                        </td>
+                        <td class="p-3">
+                            <p class="text-xs text-slate-600 font-semibold">Dedak: ${s.outputDedak.toLocaleString('id-ID')} Kg</p>
+                            <p class="text-xs text-slate-500 font-medium">Sekam: ${s.outputSekam.toLocaleString('id-ID')} Kg</p>
+                        </td>
+                        <td class="p-3 font-black text-primary-700">${s.rendemen}%</td>
+                    </tr>
+                `;
+            });
+        }
+
+
+        // ================= SALES & STOCK CONTROLLER =================
+        function renderProductStockStats() {
+            const premiumQty = document.getElementById('stock-premium-qty');
+            if(!premiumQty) return;
+            
+            premiumQty.innerText = `${state.riceStock.Premium.toLocaleString('id-ID')} Kg`;
+            document.getElementById('stock-medium-qty').innerText = `${state.riceStock.Medium.toLocaleString('id-ID')} Kg`;
+            document.getElementById('stock-menir-qty').innerText = `${state.riceStock.Menir.toLocaleString('id-ID')} Kg`;
+            document.getElementById('stock-dedak-qty').innerText = `${state.riceStock.Dedak.toLocaleString('id-ID')} Kg`;
+            document.getElementById('stock-sekam-qty').innerText = `${state.riceStock.Sekam.toLocaleString('id-ID')} Kg`;
+        }
+
+        function updateSalesProductPrice() {
+            const prodSelector = document.getElementById('sales-product');
+            if(!prodSelector) return;
+            const product = prodSelector.value;
+            document.getElementById('sales-price-unit').value = state.productPrices[product];
+            calculateSalesTotal();
+        }
+
+        function calculateSalesTotal() {
+            const product = document.getElementById('sales-product').value;
+            const qty = parseFloat(document.getElementById('sales-quantity').value) || 0;
+            const priceUnit = parseFloat(document.getElementById('sales-price-unit').value) || 0;
+
+            const total = qty * priceUnit;
+            document.getElementById('sales-total-display').value = formatRupiah(total);
+        }
+
+        async function processSale(e) {
+            e.preventDefault();
+            const customer = document.getElementById('sales-customer').value;
+            const product = document.getElementById('sales-product').value;
+            const qty = parseFloat(document.getElementById('sales-quantity').value);
+            const priceUnit = parseFloat(document.getElementById('sales-price-unit').value);
+
+            if (state.riceStock[product] < qty) {
+                showNotification('error', 'Stok Tidak Cukup', `Persediaan beras ${product} di gudang hanya ${state.riceStock[product].toLocaleString('id-ID')} Kg.`);
+                return;
+            }
+
+            const total = qty * priceUnit;
+
+            const res = await callApi({
+                action: 'processSale',
+                customer,
+                product,
+                quantity: qty,
+                totalPrice: total
+            });
+
+            if (res.status === 'success') {
+                showNotification('success', 'Transaksi Sukses', 'Penjualan berhasil dicatat di cloud database.');
+                document.getElementById('form-sales').reset();
+                updateSalesProductPrice();
+                fetchDatabaseData();
+            } else {
+                showNotification('error', 'Gagal', res.message || 'Transaksi gagal diproses.');
+            }
+        }
+
+        function renderSalesLedgerTable() {
+            const tableBody = document.getElementById('sales-history-table');
+            if(!tableBody) return;
+            tableBody.innerHTML = '';
+
+            state.salesTransactions.forEach(t => {
+                tableBody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-bold text-slate-700">${t.id}</td>
+                        <td class="p-3 font-bold text-slate-800">${t.customer}</td>
+                        <td class="p-3"><span class="bg-primary-50 text-primary-800 text-2xs font-extrabold px-2 py-0.5 rounded">${t.product}</span></td>
+                        <td class="p-3 font-semibold text-slate-800">${t.quantity.toLocaleString('id-ID')} Kg</td>
+                        <td class="p-3 font-black text-slate-900">${formatRupiah(t.totalPrice)}</td>
+                        <td class="p-3 text-xs font-semibold text-slate-400">${t.date}</td>
+                    </tr>
+                `;
+            });
+        }
+
+
+        // ================= MAINTENANCE & K3 =================
+        function logMaintenance(machineName) {
+            showNotification('success', 'Pemeliharaan Dicatat', `Perawatan untuk ${machineName} berhasil direkam ke log sistem.`);
+        }
+
+
+        // ================= DASHBOARD CORE LOGICS =================
+        function renderDashboardStats() {
+            const totalGKG = state.paddyStock.reduce((sum, p) => sum + p.GKG, 0);
+            document.getElementById('stat-stok-gabah').innerText = `${totalGKG.toLocaleString('id-ID')} Kg`;
+
+            const readyRiceEl = document.getElementById('stat-stok-beras');
+            if (readyRiceEl) {
+                const readyRice = state.riceStock.Premium + state.riceStock.Medium;
+                readyRiceEl.innerText = `${readyRice.toLocaleString('id-ID')} Kg`;
+            }
+
+            if (state.millingSessions.length > 0) {
+                const totalRendemenSum = state.millingSessions.reduce((sum, s) => sum + s.rendemen, 0);
+                const avgRendemen = (totalRendemenSum / state.millingSessions.length).toFixed(1);
+                document.getElementById('stat-rendemen').innerText = `${avgRendemen}%`;
+            } else {
+                document.getElementById('stat-rendemen').innerText = '0%';
+            }
+
+            const keuanganEl = document.getElementById('stat-keuangan');
+            if (keuanganEl) {
+                keuanganEl.innerText = formatRupiah(state.financeBalance);
+            }
+        }
+
+        function renderRecentMillingDashboard() {
+            const tableBody = document.getElementById('recent-milling-table');
+            if(!tableBody) return;
+            tableBody.innerHTML = '';
+
+            const lastFive = state.millingSessions.slice(0, 5);
+
+            if (lastFive.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Belum ada sesi penggilingan terdaftar hari ini.</td></tr>`;
+                return;
+            }
+
+            lastFive.forEach(s => {
+                let statusColor = 'bg-amber-100 text-amber-800';
+                let statusLabel = 'Standard';
+                if (s.rendemen >= 64.0) {
+                    statusColor = 'bg-emerald-100 text-emerald-800';
+                    statusLabel = 'Optimal';
+                } else if (s.rendemen < 61.0) {
+                    statusColor = 'bg-rose-100 text-rose-800';
+                    statusLabel = 'Loss Tinggi';
+                }
+
+                tableBody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4 font-bold text-slate-700">${s.id}</td>
+                        <td class="p-4 text-xs font-semibold text-slate-500">${s.date}</td>
+                        <td class="p-4"><span class="bg-amber-100 text-amber-800 text-2xs font-bold px-2 py-0.5 rounded">${s.variety}</span></td>
+                        <td class="p-4 font-black text-slate-800">${s.inputGKG.toLocaleString('id-ID')} Kg</td>
+                        <td class="p-4 font-semibold text-slate-800">${s.outputRice.toLocaleString('id-ID')} Kg</td>
+                        <td class="p-4 font-black text-primary-700">${s.rendemen}%</td>
+                        <td class="p-4"><span class="${statusColor} text-2xs font-extrabold px-2 py-0.5 rounded-full">${statusLabel}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+
+        // ================= CHARTING ENGINE (CHART.JS) =================
+        let yieldChart;
+
+        function updateDashboardCharts() {
+            const chartCanvas = document.getElementById('chartProduksi');
+            if(!chartCanvas) return;
+            
+            const ctx = chartCanvas.getContext('2d');
+            
+            const labels = [...state.millingSessions].reverse().map(s => s.id);
+            const inputData = [...state.millingSessions].reverse().map(s => s.inputGKG);
+            const rendemenData = [...state.millingSessions].reverse().map(s => s.rendemen);
+
+            if (yieldChart) {
+                yieldChart.destroy();
+            }
+
+            yieldChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Input GKG (Kg)',
+                            data: inputData,
+                            backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            borderWidth: 2,
+                            borderRadius: 6,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Rendemen Riil (%)',
+                            data: rendemenData,
+                            type: 'line',
+                            borderColor: '#f59e0b',
+                            backgroundColor: '#f59e0b',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.3,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Volume Gabah (Kg)',
+                                font: { size: 11, weight: 'bold' }
+                            },
+                            grid: {
+                                color: '#f1f5f9'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Persen Rendemen (%)',
+                                font: { size: 11, weight: 'bold' }
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            min: 50,
+                            max: 75
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { family: 'Plus Jakarta Sans', size: 11 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Live Clock helper
+        function startClock() {
+            setInterval(() => {
+                const now = new Date();
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+                document.getElementById('live-time').innerText = now.toLocaleDateString('id-ID', options);
+            }, 1000);
+        }
+
+        function showNotification(type, title, message) {
+            const toastContainer = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-white border-l-4 border-emerald-500';
+            let iconColor = 'text-emerald-500';
+            if (type === 'error') {
+                bgClass = 'bg-white border-l-4 border-rose-500';
+                iconColor = 'text-rose-500';
+            } else if (type === 'warning') {
+                bgClass = 'bg-white border-l-4 border-amber-500';
+                iconColor = 'text-amber-500';
+            }
+
+            toast.className = `p-4 rounded-xl shadow-lg border border-slate-100 ${bgClass} flex gap-3 w-80 transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `
+                <div class="flex-shrink-0 ${iconColor}">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-slate-800">${title}</h4>
+                    <p class="text-xs text-slate-500 mt-0.5">${message}</p>
+                </div>
+            `;
+
+            toastContainer.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => { toast.remove(); }, 300);
+            }, 4000);
+        }
+
+        function formatRupiah(number) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+        }
+
+        // WINDOW LOAD INIT
+        window.onload = function() {
+            startClock();
+            initApiConnection();
+        };
+    </script>
+</body>
+</html>
