@@ -47,16 +47,30 @@
 <body class="bg-slate-950 text-slate-800 min-h-screen flex flex-col transition-all duration-300">
 
     <!-- API CONFIGURATION / SETTINGS BAR (Top Screen) -->
-    <div id="api-status-bar" class="hidden bg-slate-900 border-b border-slate-800 text-white text-xs px-6 py-2 flex flex-col sm:flex-row justify-between items-center gap-2 z-40 relative">
-        <div class="flex items-center gap-2">
-            <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500" id="api-led-indicator"></span>
-            <span id="api-status-text" class="text-slate-400">Database Belum Terhubung (Lokal Demo)</span>
-        </div>
-        <div class="flex items-center gap-2 w-full sm:w-auto">
-            <input type="text" id="api-url-input" placeholder="https://script.google.com/macros/s/AKfycbwO-kzqExlKueLr9Zg8yCMEAf7shMLymacGPdysAaw7T7tMYlTM5ZaS5GVqu7gLdB89TA/exec" class="bg-slate-950 border border-slate-800 px-3 py-1 rounded-lg text-slate-300 text-2xs focus:outline-none focus:ring-1 focus:ring-primary-500 w-full sm:w-80">
-            <button onclick="saveApiUrl()" class="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-3 py-1 rounded-lg text-2xs transition shrink-0">
-                Simpan & Hubungkan
-            </button>
+   <div class="bg-slate-900 border-b border-slate-800 z-40 relative">
+        <button onclick="toggleApiBar()" class="w-full bg-slate-900 hover:bg-slate-800 text-slate-500 hover:text-slate-300 py-1 px-6 flex justify-between items-center text-3xs font-bold tracking-widest uppercase transition border-b border-slate-800/50">
+            <div class="flex items-center gap-2">
+                <span class="inline-block w-2 h-2 rounded-full bg-amber-500" id="api-led-indicator"></span>
+                <span id="api-status-text">Database Terhubung (Klik untuk Pengaturan API)</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <span>Menu API</span>
+                <svg id="api-toggle-icon" class="w-3 h-3 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+        </button>
+
+        <div id="api-sliding-panel" class="max-h-0 overflow-hidden transition-all duration-300 ease-in-out bg-slate-950/80 backdrop-blur-xs">
+            <div class="px-6 py-3 flex flex-col sm:flex-row justify-between items-center gap-3 border-t border-slate-800/40">
+                <p class="text-2xs text-slate-400 max-w-md leading-relaxed">
+                    <strong>Pengaturan Cloud:</strong> Masukkan URL Web App Google Apps Script Anda (akhiran <code class="text-emerald-400">/exec</code>) untuk mensinkronisasi data komputer & HP ke Spreadsheet.
+                </p>
+                <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                    <input type="text" id="api-url-input" placeholder="Paste URL API GAS (/exec) di sini..." class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 w-full sm:w-96 placeholder-slate-500 font-mono">
+                    <button onclick="saveApiUrl()" class="bg-primary-600 hover:bg-primary-700 text-white font-bold px-4 py-1.5 rounded-xl text-xs transition shrink-0 shadow-lg shadow-primary-600/10">
+                        Hubungkan
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -794,6 +808,20 @@
         // URL backend API GAS
         let GAS_API_URL = '';
 
+        // Fungsi Slide Toggle untuk Bar API (Gaya Jendela Excel)
+        function toggleApiBar() {
+            const panel = document.getElementById('api-sliding-panel');
+            const icon = document.getElementById('api-toggle-icon');
+            
+            if (panel.style.maxHeight === '0px' || !panel.style.maxHeight) {
+                panel.style.maxHeight = panel.scrollHeight + 'px'; // Meluncur turun (buka)
+                icon.classList.add('rotate-180');
+            } else {
+                panel.style.maxHeight = '0px'; // Meluncur naik (tutup)
+                icon.classList.remove('rotate-180');
+            }
+        }
+
         // Loader helper
         function showLoader(show) {
             document.getElementById('api-loader').style.display = show ? 'flex' : 'none';
@@ -804,19 +832,26 @@
             const savedUrl = localStorage.getItem('RMU_GAS_API_URL');
             const indicator = document.getElementById('api-led-indicator');
             const statusText = document.getElementById('api-status-text');
+            const panel = document.getElementById('api-sliding-panel');
 
             if (savedUrl) {
                 GAS_API_URL = savedUrl;
                 document.getElementById('api-url-input').value = savedUrl;
-                indicator.className = 'inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
-                statusText.innerText = 'Tersambung ke Cloud Spreadsheet';
-                statusText.className = 'text-emerald-400 font-semibold';
+                indicator.className = 'inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+                statusText.innerText = 'Cloud Database Connected (Klik untuk Ubah API)';
+                statusText.className = 'text-emerald-400 font-bold';
                 return true;
             } else {
                 GAS_API_URL = '';
-                indicator.className = 'inline-block w-2.5 h-2.5 rounded-full bg-amber-500';
-                statusText.innerText = 'Database Offline (Mode Demo)';
-                statusText.className = 'text-amber-500 font-semibold';
+                indicator.className = 'inline-block w-2 h-2 rounded-full bg-amber-500';
+                statusText.innerText = 'Database Offline / Demo Mode (Klik untuk Set URL API Cloud)';
+                statusText.className = 'text-amber-500 font-bold';
+                
+                // Jika kosong, otomatis buka panelnya agar user langsung tahu harus isi
+                setTimeout(() => {
+                    panel.style.maxHeight = panel.scrollHeight + 'px';
+                    document.getElementById('api-toggle-icon').classList.add('rotate-180');
+                }, 500);
                 return false;
             }
         }
